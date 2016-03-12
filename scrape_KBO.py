@@ -104,14 +104,17 @@ for company in COMPANY_LIST:
             assert "No results found." not in driver.page_source
             time.sleep(0.5)
             if "captchaform" in driver.current_url:
-                time.sleep(20.0)
+                time.sleep(5.0)
                 continue
             elem = driver.find_element_by_xpath("//*[contains(text(), 'Adres van de maatschappelijke zetel')]/following-sibling::td")
-            adres = elem.text.replace('\n', '\t').split('Sinds')[0].strip().split('Extra')[0].strip()
-            # print adres
-            if scrape_geo:
-                g = geocoder.google(adres)
-                print g.latlng[0], ",", g.latlng[1]
+            adres = elem.text.replace('\n','\t').split('Sinds')[0].strip().split('Extra')[0].strip()
+            print adres
+            g = geocoder.google(adres)
+            print g.latlng[0],",",g.latlng[1]
+            elems = driver.find_elements_by_xpath("//*[contains(text(), 'Functies')]/parent")
+            print len(elems)
+            for elem in elems:
+                print elem.text
 
 
             company_name = driver.find_element_by_xpath("//*[contains(text(), 'Maatschappelijke Naam:')]/following-sibling::td").text.split('\n')[0]
