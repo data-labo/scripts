@@ -1,4 +1,5 @@
 from selenium import webdriver
+from selenium.common.exceptions import NoSuchElementException
 from selenium.webdriver.common.keys import Keys
 import time
 import geocoder
@@ -89,6 +90,7 @@ profile.set_preference("general.useragent.override", "Mozilla/5.0 (Android 4.4; 
 driver = webdriver.Firefox()
 
 scrape_geo = False
+scrape_vestigingen = False
 
 for company in COMPANY_LIST:
     success = False
@@ -111,10 +113,40 @@ for company in COMPANY_LIST:
                 g = geocoder.google(adres)
                 print g.latlng[0], ",", g.latlng[1]
 
+
+            company_name = driver.find_element_by_xpath("//*[contains(text(), 'Maatschappelijke Naam:')]/following-sibling::td").text.split('\n')[0]
+
+            if scrape_vestigingen:
+                vestigingen_link = driver.find_element_by_xpath("//a[contains(text(), 'Gegevens en activiteiten per VE')]")
+                driver.get(vestigingen_link.get_attribute("href"))
+                if "Vestigingseenheidsgegevens" in driver.title:
+                    # Pagina van 1 vestiging
+                    number = driver.find_element_by_xpath("//*[contains(text(), 'Ondernemingsnummer')]/following-sibling::td").text
+                    name = driver.find_element_by_xpath("//*[contains(text(), 'Naam van de vestigingseenheid')]/following-sibling::td").text
+                    name = name.split('\n')[0]
+                    if name == "Geen gegevens opgenomen in KBO.":
+                        name = ""
+                    address = driver.find_element_by_xpath("//*[contains(text(), 'Adres van de vestigingseenheid')]/following-sibling::td").text
+                    address = address.split('\n')
+                    street = address[0].replace('   ', ' ')
+                    city = address[2].replace('   ', ' ')
+                    print company, '\t', company_name, '\t', number, '\t', name, '\t', street, '\t', city
+                else:
+                    # Tabel met meerdere vestigingen
+                    rows = driver.find_elements_by_xpath("//table[@id='vestiginglist']/tbody/tr")
+                    for row in rows:
+                        cells = row.find_elements_by_xpath('.//td')
+                        address = cells[5].text.split('\n')
+                        name = cells[4].text
+                        if name == "Geen gegevens opgenomen in KBO.":
+                            name = ""
+                        number = cells[2].text
+                        print company, '\t', company_name, '\t', name, '\t', name, '\t', address[0], '\t', address[1]
             time.sleep(2.0)
             success = True
         except:
             import traceback
+
             traceback.print_exc()
             time.sleep(1.0)
             print "NOT FOUND:", company, "->", driver.current_url
