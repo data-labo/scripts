@@ -84,7 +84,11 @@ COMPANY_LIST = """0477.143.394
 0438 592 824
 0473 044 848""".split('\n')
 
+profile = webdriver.FirefoxProfile()
+profile.set_preference("general.useragent.override", "Mozilla/5.0 (Android 4.4; Mobile; rv:41.0) Gecko/41.0 Firefox/41.0 %s" % time.time())
 driver = webdriver.Firefox()
+
+scrape_geo = False
 
 for company in COMPANY_LIST:
     success = False
@@ -98,14 +102,14 @@ for company in COMPANY_LIST:
             assert "No results found." not in driver.page_source
             time.sleep(0.5)
             if "captchaform" in driver.current_url:
-                time.sleep(2.0)
+                time.sleep(20.0)
                 continue
             elem = driver.find_element_by_xpath("//*[contains(text(), 'Adres van de maatschappelijke zetel')]/following-sibling::td")
-            adres = elem.text.replace('\n','\t').split('Sinds')[0].strip().split('Extra')[0].strip()
-            #print adres
-            g = geocoder.google(adres)
-            print g.latlng[0],",",g.latlng[1]
-
+            adres = elem.text.replace('\n', '\t').split('Sinds')[0].strip().split('Extra')[0].strip()
+            # print adres
+            if scrape_geo:
+                g = geocoder.google(adres)
+                print g.latlng[0], ",", g.latlng[1]
 
             time.sleep(2.0)
             success = True
