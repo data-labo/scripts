@@ -85,6 +85,8 @@ COMPANY_LIST = """0477.143.394
 0473 044 848""".split('\n')
 
 driver = webdriver.Firefox()
+driver = UserAgent.driver(:agent => :random)
+driver.execute_script('return navigator.userAgent')
 
 for company in COMPANY_LIST:
     success = False
@@ -98,14 +100,17 @@ for company in COMPANY_LIST:
             assert "No results found." not in driver.page_source
             time.sleep(0.5)
             if "captchaform" in driver.current_url:
-                time.sleep(2.0)
+                time.sleep(5.0)
                 continue
             elem = driver.find_element_by_xpath("//*[contains(text(), 'Adres van de maatschappelijke zetel')]/following-sibling::td")
             adres = elem.text.replace('\n','\t').split('Sinds')[0].strip().split('Extra')[0].strip()
-            #print adres
+            print adres
             g = geocoder.google(adres)
             print g.latlng[0],",",g.latlng[1]
-
+            elems = driver.find_elements_by_xpath("//*[contains(text(), 'Functies')]/parent")
+            print len(elems)
+            for elem in elems:
+                print elem.text
 
             time.sleep(2.0)
             success = True
