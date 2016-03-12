@@ -19,7 +19,8 @@ if not os.path.exists(work_dir):
 filename_base = 'ml_categories'
 filename_pdf = filename(work_dir, filename_base, 'pdf')
 filename_txt = filename(work_dir, filename_base, 'txt')
-filename_alphabetical_csv = filename(work_dir, filename_base + 'alphabetical', 'csv')
+filename_alphabetical_csv = filename(work_dir, filename_base + '_alphabetical', 'csv')
+filename_categorised_csv = filename(work_dir, filename_base + '_categories', 'csv')
 filename_grouped_csv = filename(work_dir, filename_base + '_grouped', 'csv')
 
 # Fetch pdf and write to file
@@ -29,26 +30,43 @@ pdf_file = open(filename_pdf, 'wb')
 pdf_file.write(pdf_bytes)
 
 # Convert PDF to TXT using shell util `pdftotext`
+print("Converting PDF to TXT")
 pdf_to_text_cmd = "pdftotext {0} {1}".format(filename_pdf, filename_txt)
-print("Executing '{0}'".format(pdf_to_text_cmd))
 os.system(pdf_to_text_cmd)
 
-# Parse categories and write to alphabetical 
+# Parse categories and store in dictionaries
 txt_file = open(filename_txt, 'r')
-csv_file = open(filename_alphabetical_csv, 'w')
 regex = re.compile("([^.]+) \.+\s*ML([0-9]+)")
 
-csv_file.write("ML category; ML number; Item")
-ml_cats = defaultdict(list)
+ml_cats_grouped = defaultdict(list)
+ml_cats = list()
 
 for n, line in enumerate(txt_file):
     match = regex.match(line)
     if(match is not None):
-        ml_number = match.group(2)
+        ml_number = int(match.group(2))
         ml_item = match.group(1)
-        print("Line {0} matches: ML {1} has {2}".format(n, ml_number, ml_item))
-        csv_file.write("ML{1}{0}{1}{0}{2}{0}".format(csv_separator, ml_number, ml_item))
-        ml_cats[ml_number].append(ml_item)
+        ml_cats_grouped[ml_number].append(ml_item)
+        ml_cats.append( (ml_number, ml_item) )
 
-for key in ml_cats.keys():
-    print("ML{1}{0}{2}".format(csv_separator, key, csv_separator.join(ml_cats[key])))
+# Write alphabetically ordered CSV
+ml_cats_alphabetical = sorted(ml_cats, key=lambda x: (x[1], x[0]))
+csv_file = open(filename_alphabetical_csv, 'w')
+csv_file.write("ML category;ML number;Item\n")
+for item in ml_cats_alphabetical:
+    csv_file.write("ML{1}{0}{1}{0}{2}{0}\n".format(csv_separator, item[0], item[1]))
+
+# Write category ordered CSV
+ml_cats_categorised = sorted(ml_cats, key=lambda x: (x[0], x[1]))
+csv_file = open(filename_categorised_csv, 'w')
+csv_file.write("ML category;ML number;Item\n")
+for item in ml_cats_categorised:
+    csv_file.write("ML{1}{0}{1}{0}{2}{0}\n".format(csv_separator, item[0], item[1]))
+
+# Write CSV with items grouped by category
+csv_file = open(filename_grouped_csv, 'w')
+csv_file.writelines("ML category;\n")
+for key in ml_cats_grouped.keys():
+    csv_file.writelines("ML{1}{0}{2}\n".format(csv_separator, key, csv_separator.join(ml_cats_grouped[key])))
+
+print("Found {0} items in {1} categories in the ML list".format(len(ml_cats), len(ml_cats_grouped.keys())))
