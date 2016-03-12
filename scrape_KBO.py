@@ -84,9 +84,11 @@ COMPANY_LIST = """0477.143.394
 0438 592 824
 0473 044 848""".split('\n')
 
+profile = webdriver.FirefoxProfile()
+profile.set_preference("general.useragent.override", "Mozilla/5.0 (Android 4.4; Mobile; rv:41.0) Gecko/41.0 Firefox/41.0 %s" % time.time())
 driver = webdriver.Firefox()
-driver = UserAgent.driver(:agent => :random)
-driver.execute_script('return navigator.userAgent')
+
+scrape_geo = False
 
 for company in COMPANY_LIST:
     success = False
