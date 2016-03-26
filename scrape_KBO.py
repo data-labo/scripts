@@ -1,5 +1,4 @@
 from selenium import webdriver
-from selenium.common.exceptions import NoSuchElementException
 from selenium.webdriver.common.keys import Keys
 import time
 import geocoder
@@ -102,7 +101,7 @@ for company in COMPANY_LIST:
             elem.send_keys(company)
             elem.send_keys(Keys.RETURN)
             assert "No results found." not in driver.page_source
-            time.sleep(0.5)
+            time.sleep(1)
             if "captchaform" in driver.current_url:
                 time.sleep(5.0)
                 continue
@@ -121,6 +120,7 @@ for company in COMPANY_LIST:
 
             if scrape_vestigingen:
                 vestigingen_link = driver.find_element_by_xpath("//a[contains(text(), 'Gegevens en activiteiten per VE')]")
+                time.sleep(10)
                 driver.get(vestigingen_link.get_attribute("href"))
                 if "Vestigingseenheidsgegevens" in driver.title:
                     # Pagina van 1 vestiging
@@ -133,7 +133,8 @@ for company in COMPANY_LIST:
                     address = address.split('\n')
                     street = address[0].replace('   ', ' ')
                     city = address[2].replace('   ', ' ')
-                    print company, '\t', company_name, '\t', number, '\t', name, '\t', street, '\t', city
+                    g = geocoder.google(street + ' ' + city)
+                    print company, '\t', company_name, '\t', number, '\t', name, '\t', street, '\t', city, '\t', g.latlng[0], ",", g.latlng[1]
                 else:
                     # Tabel met meerdere vestigingen
                     rows = driver.find_elements_by_xpath("//table[@id='vestiginglist']/tbody/tr")
@@ -144,15 +145,15 @@ for company in COMPANY_LIST:
                         if name == "Geen gegevens opgenomen in KBO.":
                             name = ""
                         number = cells[2].text
-                        print company, '\t', company_name, '\t', name, '\t', name, '\t', address[0], '\t', address[1]
-            time.sleep(2.0)
+                        g = geocoder.google(address[0] + ' ' + address[1])
+                        print company, '\t', company_name, '\t', number, '\t', name, '\t', address[0], '\t', address[1], '\t', g.latlng[0], ',', g.latlng[1]
             success = True
         except:
             import traceback
 
             traceback.print_exc()
-            time.sleep(1.0)
             print "NOT FOUND:", company, "->", driver.current_url
             success = True
+        time.sleep(10.0)
 
 driver.close()
